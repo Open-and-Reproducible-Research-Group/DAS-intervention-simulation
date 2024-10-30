@@ -1,0 +1,127 @@
+---
+title: "Simulation Analysis"
+format: html
+---
+
+First, we load the data from our simulation and clean it.
+```{r, message=FALSE}
+library(tidyverse)
+library(tidytext)
+
+df <- read_csv("combined_sim_res.csv")
+
+df_clean <- df %>% 
+  mutate(divergent_transitions = str_extract(warnings, "There were (\\d+)",
+                                             group = TRUE) %>% as.numeric(),
+         ESS_issue = str_detect(warnings, "ESS"),
+         r_hat_issue = str_detect(warnings, "R-hat")) %>% 
+  replace_na(list(divergent_transitions = 0, ESS_issue = FALSE,
+                  r_hat_issue = FALSE)) %>% 
+  filter(term == "intervention")
+
+true_eff_small <- .044
+true_eff_large <- .089
+```
+
+We check the simulations for potential warnings.
+
+```{r}
+n_warnings <- df_clean %>% 
+  filter(!is.na(warnings)) %>% 
+  nrow()
+
+stopifnot(identical(n_warnings, 0L))
+```
+
+Success, we have no warnings, divergent transitions or other issues that might
+impair our estimation.
+
+# Small effect
+We first explore the outcomes for the small effect.
+
+```{r fig.width=8, fig.height=6}
+pdata <- df_clean %>% 
+  filter(round(true_effect, 1) == 0, n %in% seq(100, 600, by = 100))
+
+pdata %>% 
+  ggplot(aes(x = estimate, y = reorder_within(as.factor(run_id), estimate, n))) +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_point() +
+  geom_vline(xintercept = true_eff_small, colour = "red3") +
+  geom_vline(xintercept = 0, linetype = 2) +
+  scale_y_reordered() +
+  theme_minimal() +
+  facet_wrap(vars(n), scales = "free_y")
+```
+We display marginal effects on the probability scale (median estimate of the
+posterior) with the respective 95% credibility-intervals.
+
+We clearly see that as the sample size increases, our estimates become less 
+variable in terms of credibility intervals.
+
+We further check some numbers.
+
+```{r}
+# check for bias and power
+df_clean %>% 
+  filter(round(true_effect, 1) == 0) %>% 
+  group_by(n) %>% 
+  summarise(med_eff = median(estimate),
+            power = sum(conf.low > 0) / 100,
+            median_interval_width = median(conf.high - conf.low)) %>% 
+  knitr::kable()
+```
+
+From the table, we can make a couple of conclusions:
+
+1. The median effect size across 100 runs per sample size is slightly lower than
+the true value for smaller sample sizes. This is expected and desirable, with
+the prior expecting an effect size of zero having a larger impact on the final
+estimates for small effect sizes.
+2. We further compute the power, by calculating the proportion of runs 
+where the credibility interval does not include 0. With a sample size
+of 400-500, we reach a power of about 75%. The power increases to 90% and above
+for larger effect sizes.
+3. The credibility intervals get narrower for higher sample sizes. With a sample
+size of 500, the credibility interval covers a range of 6.3 percentage points,
+with a median estimate of a 4.1% higher rate of data sharing in the intervention
+group.
+
+Overall, a sample size of 300 or higher seems to provide reasonable precision
+and power, even for such a small effect.
+
+
+# Larger effect
+```{r}
+pdata <- df_clean %>% 
+  filter(round(true_effect, 1) == 0.1, n %in% seq(100, 600, by = 100))
+
+pdata %>% 
+  ggplot(aes(x = estimate, y = reorder_within(as.factor(run_id), estimate, n))) +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_point() +
+  geom_vline(xintercept = true_eff_large, colour = "red3") +
+  geom_vline(xintercept = 0, linetype = 2) +
+  scale_y_reordered() +
+  theme_minimal() +
+  facet_wrap(vars(n), scales = "free_y")
+```
+
+
+```{r}
+# check for bias and power
+df_clean %>% 
+  filter(round(true_effect, 1) == .1) %>% 
+  group_by(n) %>% 
+  summarise(med_eff = median(estimate),
+            power = sum(conf.low > 0) / 100,
+            median_interval_width = median(conf.high - conf.low)) %>% 
+  knitr::kable()
+
+```
+
+Compared to the case of a small expected effect size, a smaller sample size is
+necessary to achieve high power in the case of the moderate effect size. With
+$n = 300$, we achieve 94% power, which increases further to 100% with larger
+samples. Notably, the variability of the estimates is higher than in the case 
+with a small effect.
