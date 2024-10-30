@@ -1,6 +1,10 @@
 ---
-title: "Simulation Analysis"
-format: html
+title: "DAS Study - Simulation Analysis"
+subtitle: "Simulations to validate the statistical model and to understand power
+and precision for the study design"
+author: "Thomas Klebel"
+date: today
+format: pdf
 ---
 
 First, we load the data from our simulation and clean it.
@@ -38,13 +42,16 @@ impair our estimation.
 
 # Small effect
 We first explore the outcomes for the small effect.
+We display marginal effects on the probability scale (median estimate of the
+posterior) with the respective 95% credibility-intervals.
 
 ```{r fig.width=8, fig.height=6}
 pdata <- df_clean %>% 
   filter(round(true_effect, 1) == 0, n %in% seq(100, 600, by = 100))
 
 pdata %>% 
-  ggplot(aes(x = estimate, y = reorder_within(as.factor(run_id), estimate, n))) +
+  ggplot(aes(x = estimate, 
+             y = reorder_within(as.factor(run_id), estimate, n))) +
   geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
   geom_point() +
   geom_vline(xintercept = true_eff_small, colour = "red3") +
@@ -53,8 +60,7 @@ pdata %>%
   theme_minimal() +
   facet_wrap(vars(n), scales = "free_y")
 ```
-We display marginal effects on the probability scale (median estimate of the
-posterior) with the respective 95% credibility-intervals.
+
 
 We clearly see that as the sample size increases, our estimates become less 
 variable in terms of credibility intervals.
@@ -76,28 +82,29 @@ From the table, we can make a couple of conclusions:
 
 1. The median effect size across 100 runs per sample size is slightly lower than
 the true value for smaller sample sizes. This is expected and desirable, with
-the prior expecting an effect size of zero having a larger impact on the final
+the prior on the beta coefficients having a larger impact on the final
 estimates for small effect sizes.
 2. We further compute the power, by calculating the proportion of runs 
 where the credibility interval does not include 0. With a sample size
 of 400-500, we reach a power of about 75%. The power increases to 90% and above
-for larger effect sizes.
+for larger sample sizes.
 3. The credibility intervals get narrower for higher sample sizes. With a sample
 size of 500, the credibility interval covers a range of 6.3 percentage points,
 with a median estimate of a 4.1% higher rate of data sharing in the intervention
 group.
 
-Overall, a sample size of 300 or higher seems to provide reasonable precision
+Overall, a sample size of 400 or higher seems to provide reasonable precision
 and power, even for such a small effect.
 
 
 # Larger effect
-```{r}
+```{r fig.width=8, fig.height=6}
 pdata <- df_clean %>% 
   filter(round(true_effect, 1) == 0.1, n %in% seq(100, 600, by = 100))
 
 pdata %>% 
-  ggplot(aes(x = estimate, y = reorder_within(as.factor(run_id), estimate, n))) +
+  ggplot(aes(x = estimate, 
+             y = reorder_within(as.factor(run_id), estimate, n))) +
   geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
   geom_point() +
   geom_vline(xintercept = true_eff_large, colour = "red3") +
@@ -123,5 +130,5 @@ df_clean %>%
 Compared to the case of a small expected effect size, a smaller sample size is
 necessary to achieve high power in the case of the moderate effect size. With
 $n = 300$, we achieve 94% power, which increases further to 100% with larger
-samples. Notably, the variability of the estimates is higher than in the case 
+samples. However, the variability of the estimates is higher than in the case 
 with a small effect.
