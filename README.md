@@ -9,7 +9,7 @@ and attainable precision.
 
 The repo contains the following files:
 
-- `01-sample-size-calc.R`: an interactive script that was used to develop the
+- `01-sample-size-calc.R`: A script that was used to develop the
 simulation approach and the modelling approach.
 - `02-multi-stage-simulation.R`: Code used to run the simulations multiple times
 to assess coverage, power and bias.
