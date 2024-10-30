@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+
+03-simulation-analysis_files/*
+03-simulation-analysis.html
