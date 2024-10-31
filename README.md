@@ -20,6 +20,7 @@ above file.
 - `10-study-randomisation.R`: Contains code to generate the random sequence we
 used to implement the study. The specific seed used in the study is not 
 provided for data protection reasons.
+- `study_randomisation.csv`: Randomisation sequence to be used in the study.
 
 You should be able to install the required packages to run the simulations
 by running `renv::restore()`. 
